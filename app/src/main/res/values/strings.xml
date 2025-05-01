@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">TSIN_ProyectAndroid</string>
+    <string name="title_activity_arduino_config">ArduinoConfig</string>
+    <string name="title_activity_arduino_config_bluetooth">ArduinoConfigBluetooth</string>
+</resources>

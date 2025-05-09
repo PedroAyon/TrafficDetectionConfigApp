@@ -1,6 +1,6 @@
 package com.example.tsin_androidproyect.models
 
-data class TrafficCam(
+data class RemoteTrafficCam(
     val traffic_cam_id: Int,
     val alias: String,
     val location_lat: Double,

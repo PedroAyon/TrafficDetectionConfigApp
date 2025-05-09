@@ -14,12 +14,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.toLowerCase
 import androidx.compose.ui.unit.dp
 import com.example.tsin_androidproyect.models.CamRequest
 import com.example.tsin_androidproyect.models.RefLine
-import com.example.tsin_androidproyect.models.TrafficCam
-import com.example.tsin_androidproyect.repository.CamRepository
+import com.example.tsin_androidproyect.models.RemoteTrafficCam
+import com.example.tsin_androidproyect.repository.RemoteCamRepository
 import com.example.tsin_androidproyect.ui.theme.TSIN_ProyectAndroidTheme
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
@@ -34,7 +33,7 @@ class ArduinoConfigWifi : ComponentActivity() {
 
         // 1) Extract TrafficCam JSON from intent
         val camJson = intent.getStringExtra("cam_json") ?: ""
-        val cam = Gson().fromJson(camJson, TrafficCam::class.java)
+        val cam = Gson().fromJson(camJson, RemoteTrafficCam::class.java)
 
         setContent {
             TSIN_ProyectAndroidTheme {
@@ -50,7 +49,7 @@ class ArduinoConfigWifi : ComponentActivity() {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ArduinoConfigWifiScreen(
-    cam: TrafficCam,
+    cam: RemoteTrafficCam,
     onBackPressed: () -> Unit
 ) {
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
@@ -82,7 +81,7 @@ fun ArduinoConfigWifiScreen(
                 // call editCam and finish
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
-                        CamRepository().editCam(cam.traffic_cam_id, updatedRequest)
+                        RemoteCamRepository().editCam(cam.traffic_cam_id, updatedRequest)
                     } finally {
                         onBackPressed()
                     }
@@ -94,7 +93,7 @@ fun ArduinoConfigWifiScreen(
 
 @Composable
 fun WifiForm(
-    cam: TrafficCam,
+    cam: RemoteTrafficCam,
     modifier: Modifier = Modifier,
     onSaved: (CamRequest) -> Unit
 ) {

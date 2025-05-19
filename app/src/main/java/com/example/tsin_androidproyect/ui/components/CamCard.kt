@@ -1,5 +1,8 @@
 package com.example.tsin_androidproyect.ui.components
 
+import android.Manifest
+import android.bluetooth.BluetoothDevice
+import androidx.annotation.RequiresPermission
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -13,13 +16,13 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.example.tsin_androidproyect.models.BluetoothTrafficCam
 import com.example.tsin_androidproyect.models.RemoteTrafficCam
 
 @Composable
+@RequiresPermission(Manifest.permission.BLUETOOTH_CONNECT)
 fun CamCard(
     remoteCam: RemoteTrafficCam? = null,
-    bluetoothCam: BluetoothTrafficCam? = null,
+    bluetoothCam: BluetoothDevice? = null,
     onClick: () -> Unit
 ) {
     require(remoteCam != null || bluetoothCam != null) {
@@ -50,8 +53,8 @@ fun CamCard(
                 }
             } else if (bluetoothCam != null) {
                 Column {
-                    Text(text = bluetoothCam.deviceName)
-                    Text(text = bluetoothCam.macAddress)
+                    Text(text = bluetoothCam.name ?: "")
+                    Text(text = bluetoothCam.address)
                 }
             }
         }

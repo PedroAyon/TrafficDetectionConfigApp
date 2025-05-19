@@ -10,9 +10,11 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.tsin_androidproyect.models.CamRequest
@@ -115,7 +117,7 @@ fun WifiForm(
     var distancia by remember { mutableStateOf(cam.ref_distance.toInt().toString()) }
     var selectedOption by remember { mutableStateOf(cam.track_orientation.lowercase(Locale.ROOT)) }
     var expanded by remember { mutableStateOf(false) }
-    val options = listOf("Horizontal", "Vertical")
+    val options = listOf("horizontal", "vertical")
 
     Column(
         modifier = modifier
@@ -126,7 +128,9 @@ fun WifiForm(
             value = alias,
             onValueChange = { alias = it },
             label = { Text("Alias") },
-            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp)
         )
 
         Row(modifier = Modifier.fillMaxWidth()) {
@@ -134,20 +138,35 @@ fun WifiForm(
                 value = latitud,
                 onValueChange = { if (it.toDoubleOrNull() != null) latitud = it },
                 label = { Text("Latitud") },
-                modifier = Modifier.weight(1f).padding(end = 4.dp),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(end = 4.dp),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
             OutlinedTextField(
                 value = longitud,
                 onValueChange = { if (it.toDoubleOrNull() != null) longitud = it },
                 label = { Text("Longitud") },
-                modifier = Modifier.weight(1f).padding(start = 4.dp),
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(start = 4.dp),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
             )
         }
 
-        Box(modifier = Modifier.padding(vertical = 8.dp)) {
-            Button(onClick = { expanded = true }) { Text(selectedOption) }
+        Box(modifier = Modifier.padding(bottom = 8.dp, top = 16.dp)) {
+            Text(text = "Líneas de Referencia", style = MaterialTheme.typography.headlineSmall)
+        }
+
+        Box(modifier = Modifier.padding()) {
+            Button(onClick = { expanded = true }) {
+                Text(selectedOption)
+                Spacer(modifier = Modifier.width(16.dp))
+                Icon(
+                    contentDescription = "",
+                    imageVector = Icons.Filled.ArrowDropDown,
+                )
+            }
             DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                 options.forEach { option ->
                     DropdownMenuItem(text = { Text(option) }, onClick = {
@@ -164,59 +183,77 @@ fun WifiForm(
             value = inicioAx,
             onValueChange = { if (it.all(Char::isDigit)) inicioAx = it },
             label = { Text("Inicio Ax") },
-            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp)
         )
         OutlinedTextField(
             value = inicioAy,
             onValueChange = { if (it.all(Char::isDigit)) inicioAy = it },
             label = { Text("Inicio Ay") },
-            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp)
         )
         // Punto B Inicio
         OutlinedTextField(
             value = inicioBx,
             onValueChange = { if (it.all(Char::isDigit)) inicioBx = it },
             label = { Text("Inicio Bx") },
-            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp)
         )
         OutlinedTextField(
             value = inicioBy,
             onValueChange = { if (it.all(Char::isDigit)) inicioBy = it },
             label = { Text("Inicio By") },
-            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp)
         )
         // Punto A Final
         OutlinedTextField(
             value = finalAx,
             onValueChange = { if (it.all(Char::isDigit)) finalAx = it },
             label = { Text("Final Ax") },
-            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp)
         )
         OutlinedTextField(
             value = finalAy,
             onValueChange = { if (it.all(Char::isDigit)) finalAy = it },
             label = { Text("Final Ay") },
-            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp)
         )
         // Punto B Final
         OutlinedTextField(
             value = finalBx,
             onValueChange = { if (it.all(Char::isDigit)) finalBx = it },
             label = { Text("Final Bx") },
-            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp)
         )
         OutlinedTextField(
             value = finalBy,
             onValueChange = { if (it.all(Char::isDigit)) finalBy = it },
             label = { Text("Final By") },
-            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp)
         )
 
         OutlinedTextField(
             value = distancia,
             onValueChange = { if (it.all(Char::isDigit)) distancia = it },
             label = { Text("Distancia (m)") },
-            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp)
         )
 
         Spacer(modifier = Modifier.height(16.dp))

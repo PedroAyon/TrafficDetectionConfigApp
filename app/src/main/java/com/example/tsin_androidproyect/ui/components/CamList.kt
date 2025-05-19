@@ -1,6 +1,12 @@
 package com.example.tsin_androidproyect.ui.components
 
+import android.annotation.SuppressLint
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -18,8 +24,10 @@ import androidx.compose.material.pullrefresh.rememberPullRefreshState
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -30,49 +38,85 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.text.isDigitsOnly
 import com.example.tsin_androidproyect.ArduinoConfigWifi
-import com.example.tsin_androidproyect.models.BluetoothTrafficCam
 import com.example.tsin_androidproyect.models.RemoteTrafficCam
 import com.example.tsin_androidproyect.models.WifiBluetoothToggleState
 import com.example.tsin_androidproyect.repository.RemoteCamRepository
 import com.google.gson.Gson
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-
+@SuppressLint("MissingPermission")
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun CamList(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     val remoteCamRepository = remember { RemoteCamRepository() }
     var remoteCams by remember { mutableStateOf<List<RemoteTrafficCam>?>(null) }
-    var bluetoothCams by remember { mutableStateOf<List<BluetoothTrafficCam>?>(null) }
     var searchText by remember { mutableStateOf("") }
     var isRefreshing by remember { mutableStateOf(false) }
     var wifiBluetoothToggleState by remember { mutableStateOf(WifiBluetoothToggleState.WIFI) }
     val scope = rememberCoroutineScope()
+    val bluetoothDevices = remember { mutableStateListOf<BluetoothDevice>() }
+    val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
 
+// Receiver to collect found devices
+    val receiver = remember {
+        object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent) {
+                when (intent.action) {
+                    BluetoothDevice.ACTION_FOUND -> {
+                        val device: BluetoothDevice? =
+                            intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE)
+                        device?.let { newDevice ->
+                            // Add only if not already in the list
+                            if (bluetoothDevices.none { it.address == newDevice.address }) {
+                                bluetoothDevices.add(newDevice)
+                            }
+                        }
+                    }
+
+                    BluetoothAdapter.ACTION_DISCOVERY_FINISHED -> {
+                        isRefreshing = false
+                    }
+                }
+            }
+        }
+    }
+
+
+    // Function to fetch Wi-Fi cams
     fun fetchWifiCams() {
         scope.launch {
             isRefreshing = true
             remoteCams = try {
                 remoteCamRepository.fetchAllCams()
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 emptyList()
             }
             isRefreshing = false
         }
     }
 
-    fun fetchBluetoothCams() {
-        scope.launch {
-            isRefreshing = true
-            delay(1000)
-            // TODO: detect available cams via bluetooth adapter
-            bluetoothCams = listOf( // Placeholder for Bluetooth fetching logic
-                 BluetoothTrafficCam("MyWifiAP", "password123", "ESP32-CAM-BT", "AA:BB:CC:DD:EE:FF"),
-                 BluetoothTrafficCam(null, null, "BT_Device_1", "11:22:33:44:55:66")
-            )
-            isRefreshing = false
+    // Function to fetch Bluetooth devices using discovery
+    fun fetchBluetoothDevices() {
+        if (bluetoothAdapter == null) return
+        // Clear existing
+        bluetoothDevices.clear()
+        isRefreshing = true
+        // Register receiver
+        val filter = IntentFilter().apply {
+            addAction(BluetoothDevice.ACTION_FOUND)
+            addAction(BluetoothAdapter.ACTION_DISCOVERY_FINISHED)
+        }
+        context.registerReceiver(receiver, filter)
+        // Start discovery
+        bluetoothAdapter.startDiscovery()
+    }
+
+// Ensure receiver is unregistered when no longer needed
+    DisposableEffect(Unit) {
+        onDispose {
+            context.unregisterReceiver(receiver)
+            bluetoothAdapter?.cancelDiscovery()
         }
     }
 
@@ -81,7 +125,7 @@ fun CamList(modifier: Modifier = Modifier) {
         if (wifiBluetoothToggleState == WifiBluetoothToggleState.WIFI) {
             if (remoteCams == null) fetchWifiCams()
         } else {
-            if (bluetoothCams == null) fetchBluetoothCams()
+            fetchBluetoothDevices()
         }
     }
 
@@ -91,10 +135,11 @@ fun CamList(modifier: Modifier = Modifier) {
             if (wifiBluetoothToggleState == WifiBluetoothToggleState.WIFI) {
                 fetchWifiCams()
             } else {
-                fetchBluetoothCams()
+                fetchBluetoothDevices()
             }
         }
     )
+
 
     Column(
         modifier = modifier
@@ -121,7 +166,8 @@ fun CamList(modifier: Modifier = Modifier) {
         }
 
         val isWifiMode = wifiBluetoothToggleState == WifiBluetoothToggleState.WIFI
-        val initialLoading = (isWifiMode && remoteCams == null) || (!isWifiMode && bluetoothCams == null)
+        val initialLoading =
+            (isWifiMode && remoteCams == null) || (!isWifiMode && bluetoothDevices.isEmpty())
 
         if (initialLoading && !isRefreshing) {
             Box(
@@ -138,7 +184,12 @@ fun CamList(modifier: Modifier = Modifier) {
             ) {
                 if (isWifiMode) {
                     val filteredRemoteCams = remoteCams
-                        ?.filter { it.alias.contains(searchText, ignoreCase = true) || (searchText.isDigitsOnly() && it.traffic_cam_id == searchText.toInt()) }
+                        ?.filter {
+                            it.alias.contains(
+                                searchText,
+                                ignoreCase = true
+                            ) || (searchText.isDigitsOnly() && it.traffic_cam_id == searchText.toInt())
+                        }
                         ?: emptyList()
 
                     if (filteredRemoteCams.isEmpty() && !isRefreshing) {
@@ -162,9 +213,12 @@ fun CamList(modifier: Modifier = Modifier) {
                         }
                     }
                 } else { // Bluetooth Mode
-                    val filteredBluetoothCams = bluetoothCams
-                        ?.filter { it.deviceName.contains(searchText, ignoreCase = true) || it.macAddress.contains(searchText, ignoreCase = true) }
-                        ?: emptyList()
+                    val filteredBluetoothCams = bluetoothDevices.filter {
+                        (it.name != null && it.name.contains(
+                            searchText,
+                            ignoreCase = true
+                        )) || it.address.contains(searchText, ignoreCase = true)
+                    }
 
                     if (filteredBluetoothCams.isEmpty() && !isRefreshing) {
                         Text(
@@ -175,9 +229,9 @@ fun CamList(modifier: Modifier = Modifier) {
                         LazyColumn(
                             modifier = Modifier.fillMaxSize()
                         ) {
-                            items(filteredBluetoothCams, key = { cam -> cam.macAddress }) { cam ->
+                            items(filteredBluetoothCams, key = { cam -> cam.address }) { cam ->
                                 CamCard(bluetoothCam = cam) {
-
+                                    // TODO: on click bluetooth device
                                 }
                             }
                         }

@@ -37,6 +37,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.core.text.isDigitsOnly
+import com.example.tsin_androidproyect.ArduinoConfigBluetooth
 import com.example.tsin_androidproyect.ArduinoConfigWifi
 import com.example.tsin_androidproyect.models.RemoteTrafficCam
 import com.example.tsin_androidproyect.models.WifiBluetoothToggleState
@@ -213,14 +214,14 @@ fun CamList(modifier: Modifier = Modifier) {
                         }
                     }
                 } else { // Bluetooth Mode
-                    val filteredBluetoothCams = bluetoothDevices.filter {
+                    val filteredBluetoothDevices = bluetoothDevices.filter {
                         (it.name != null && it.name.contains(
                             searchText,
                             ignoreCase = true
                         )) || it.address.contains(searchText, ignoreCase = true)
                     }
 
-                    if (filteredBluetoothCams.isEmpty() && !isRefreshing) {
+                    if (filteredBluetoothDevices.isEmpty() && !isRefreshing) {
                         Text(
                             "No Bluetooth cameras found.",
                             modifier = Modifier.align(Alignment.Center)
@@ -229,10 +230,12 @@ fun CamList(modifier: Modifier = Modifier) {
                         LazyColumn(
                             modifier = Modifier.fillMaxSize()
                         ) {
-                            items(filteredBluetoothCams, key = { cam -> cam.address }) { cam ->
-                                CamCard(bluetoothCam = cam) {
-                                    // TODO: on click bluetooth device
-                                }
+                            items(filteredBluetoothDevices, key = { cam -> cam.address }) { device ->
+                                CamCard(bluetoothCam = device) {
+                                    Intent(context, ArduinoConfigBluetooth::class.java).also { intent ->
+                                        intent.putExtra("bluetooth_device", device)
+                                        context.startActivity(intent)
+                                    }                                }
                             }
                         }
                     }

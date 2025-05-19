@@ -1,5 +1,7 @@
 package com.example.tsin_androidproyect
 
+import android.annotation.SuppressLint
+import android.bluetooth.BluetoothDevice
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -18,17 +20,28 @@ class ArduinoConfigBluetooth : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        val device: BluetoothDevice? = intent
+            .getParcelableExtra("bluetooth_device")
         setContent {
             TSIN_ProyectAndroidTheme {
-                ArduinoConfigBluetoothScreen(onBackPressed = { finish() })
-            }
+                ArduinoConfigBluetoothScreen(
+                    bluetoothDevice = device,
+                    onBackPressed = { finish() }
+                )            }
         }
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ArduinoConfigBluetoothScreen(onBackPressed: () -> Unit) {
+@SuppressLint("MissingPermission")
+@OptIn(ExperimentalMaterial3Api::class)
+fun ArduinoConfigBluetoothScreen(
+    bluetoothDevice: BluetoothDevice?,
+    onBackPressed: () -> Unit
+) {
+    // Now you can do something like:
+    val name = bluetoothDevice?.name ?: "Unknown"
+    val address = bluetoothDevice?.address ?: "n/a"
     val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior(rememberTopAppBarState())
 
     Scaffold(
@@ -56,12 +69,31 @@ fun ArduinoConfigBluetoothScreen(onBackPressed: () -> Unit) {
             )
         }
     ) { innerPadding ->
-        BluetoothForm(modifier = Modifier.padding(innerPadding))
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            Text(
+                text = "Dispositivo: $name",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = "MAC: $address",
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.padding(bottom = 16.dp)
+            )
+
+            BluetoothForm() {
+                // TODO: enviar SSID y contraseña al bluetooth device
+            }
+        }
     }
 }
 
 @Composable
-fun BluetoothForm(modifier: Modifier = Modifier) {
+fun BluetoothForm(modifier: Modifier = Modifier, onSaveClick: () -> Unit) {
     var fieldOne by remember { mutableStateOf("") }
     var fieldTwo by remember { mutableStateOf("") }
 
@@ -82,16 +114,8 @@ fun BluetoothForm(modifier: Modifier = Modifier) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        Button(onClick = {  }, modifier = Modifier.fillMaxWidth()) {
+        Button(onClick = { onSaveClick }, modifier = Modifier.fillMaxWidth()) {
             Text("Guardar")
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun BluetoothFormPreview() {
-    TSIN_ProyectAndroidTheme {
-        ArduinoConfigBluetoothScreen(onBackPressed = {})
     }
 }
